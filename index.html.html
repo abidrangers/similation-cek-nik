@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>NIK Verification System – PRO</title>
+
+<style>
+:root {
+    --primary:#0d6efd;
+    --success:#198754;
+    --warning:#ffc107;
+    --danger:#dc3545;
+}
+
+body{
+    font-family:'Segoe UI',sans-serif;
+    background:
+      linear-gradient(rgba(255,255,255,.94),rgba(255,255,255,.94)),
+      url("https://upload.wikimedia.org/wikipedia/commons/5/5e/Logo_Dukcapil.png")
+      center/260px no-repeat fixed;
+    padding:40px;
+}
+
+.app{
+    max-width:650px;
+    margin:auto;
+    background:#fff;
+    border-radius:16px;
+    padding:30px;
+    box-shadow:0 15px 40px rgba(0,0,0,.2);
+}
+
+h1{
+    text-align:center;
+    font-size:24px;
+    margin-bottom:5px;
+}
+
+.subtitle{
+    text-align:center;
+    font-size:13px;
+    color:#666;
+    margin-bottom:25px;
+}
+
+label{
+    font-weight:600;
+    margin-top:15px;
+    display:block;
+}
+
+input,select,button{
+    width:100%;
+    padding:12px;
+    margin-top:6px;
+    font-size:15px;
+}
+
+button{
+    background:var(--primary);
+    color:white;
+    border:none;
+    border-radius:8px;
+    margin-top:25px;
+    cursor:pointer;
+}
+
+button:hover{opacity:.9}
+
+.result{
+    margin-top:30px;
+    padding:20px;
+    border-radius:10px;
+    font-size:15px;
+}
+
+.green{background:#d1e7dd;color:#0f5132}
+.yellow{background:#fff3cd;color:#664d03}
+.red{background:#f8d7da;color:#842029}
+
+.badge{
+    display:inline-block;
+    padding:6px 12px;
+    border-radius:20px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.score{
+    font-size:40px;
+    font-weight:bold;
+    text-align:center;
+}
+
+.detail{
+    margin-top:15px;
+    font-size:14px;
+}
+
+hr{margin:15px 0}
+
+audio{display:none}
+.toggle{
+    font-size:12px;
+    text-align:center;
+    cursor:pointer;
+    color:#555;
+    margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<audio id="bgm" autoplay loop>
+ <source src="https://cdn.pixabay.com/audio/2022/10/26/audio_9c3df74c9d.mp3">
+</audio>
+
+<div class="app">
+<h1>🔍 NIK Verification System</h1>
+<div class="subtitle">Simulasi Profesional Validasi NIK Indonesia</div>
+
+<label>NIK (16 digit)</label>
+<input id="nik" maxlength="16" placeholder="3507004509070002">
+
+<label>Tanggal Lahir</label>
+<input type="date" id="tgl">
+
+<label>Jenis Kelamin</label>
+<select id="jk">
+ <option value="">-- Pilih --</option>
+ <option value="L">Laki-laki</option>
+ <option value="P">Perempuan</option>
+</select>
+
+<button onclick="verifikasi()">VERIFIKASI DATA</button>
+
+<div id="output"></div>
+
+<div class="toggle" onclick="toggleAudio()">🔊 Aktif / Nonaktifkan Musik</div>
+</div>
+
+<script>
+function verifikasi(){
+ const nik=document.getElementById("nik").value;
+ const tgl=document.getElementById("tgl").value;
+ const jk=document.getElementById("jk").value;
+ const out=document.getElementById("output");
+
+ if(nik.length!==16||isNaN(nik)){
+  out.innerHTML=resultBox("🔴 ERROR","NIK harus 16 digit angka.","red");
+  return;
+ }
+ if(!tgl||!jk){
+  out.innerHTML=resultBox("🟡 DATA BELUM LENGKAP","Tanggal lahir & jenis kelamin wajib diisi.","yellow");
+  return;
+ }
+
+ let d=parseInt(nik.substr(6,2));
+ let m=nik.substr(8,2);
+ let y=parseInt(nik.substr(10,2));
+
+ let jkNIK="L";
+ if(d>40){jkNIK="P";d-=40;}
+
+ y=(y<=25)?2000+y:1900+y;
+ let tglNIK=`${y}-${m}-${String(d).padStart(2,'0')}`;
+
+ let score=0;
+ let detail=[];
+
+ if(tglNIK===tgl){score+=60;detail.push("✔ Tanggal lahir cocok")}
+ else detail.push("✖ Tanggal lahir tidak cocok");
+
+ if(jkNIK===jk){score+=40;detail.push("✔ Jenis kelamin cocok")}
+ else detail.push("✖ Jenis kelamin tidak cocok");
+
+ let status,color,saran;
+
+ if(score===100){
+  status="🟢 VALID";
+  color="green";
+  saran="Data siap dipakai di Verval PD / Dapodik tanpa perbaikan.";
+ }else if(score>=60){
+  status="🟡 PERLU CEK";
+  color="yellow";
+  saran="Periksa kembali salah satu komponen atau dokumen pendukung.";
+ }else{
+  status="🔴 TIDAK VALID";
+  color="red";
+  saran="Sangat disarankan koreksi data di Dukcapil atau sekolah.";
+ }
+
+ out.innerHTML=`
+ <div class="result ${color}">
+   <div class="badge">${status}</div>
+   <div class="score">${score}%</div>
+   <hr>
+   <strong>Hasil Pembacaan NIK</strong><br>
+   Tgl dari NIK: ${tglNIK}<br>
+   JK dari NIK: ${jkNIK==="L"?"Laki-laki":"Perempuan"}
+   <div class="detail">
+     <hr>
+     ${detail.join("<br>")}
+     <hr>
+     <strong>Saran Sistem:</strong><br>${saran}
+   </div>
+ </div>`;
+}
+
+function resultBox(title,msg,color){
+ return `<div class="result ${color}">
+ <strong>${title}</strong><br>${msg}</div>`;
+}
+
+function toggleAudio(){
+ const a=document.getElementById("bgm");
+ a.muted=!a.muted;
+}
+</script>
+
+</body>
+</html>
